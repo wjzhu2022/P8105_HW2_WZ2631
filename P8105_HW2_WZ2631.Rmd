@@ -129,5 +129,60 @@ sum(sportsballs2020_mr$sports_balls)
 As a result, the total number of sports balls collected by Mr. Trash Wheel in 2020 was 856.
 
 ## Problem 3
+### Import and clean data of `pols-month.csv` firstly.
+```{r}
+library(magrittr)
+data_pols = 
+  read_csv("/Users/pap/Desktop/R_space/P8105_HW2_WZ2631/pols-month.csv") %>%
+  janitor::clean_names() %>%
+  separate(mon, c("year", "month", "day"), sep = "-") %>%
+  mutate(
+    month = as.integer(month),
+    month = month.abb[month],
+    year = as.integer(year),
+    president = ifelse(prez_dem == 1, "dem", "gop")) %>% 
+  dplyr::select(-day, -prez_gop, -prez_dem)
+data_pols
+```
 
+### Import and clean data of `snp.csv`.
+```{r}
+data_snp = 
+  read_csv("/Users/pap/Desktop/R_space/P8105_HW2_WZ2631/snp.csv") %>%
+  janitor::clean_names() %>% 
+  separate(date, c("month", "day", "year"), sep = "/") %>% 
+  mutate(
+    year = as.integer(year),
+    year = ifelse(year > 2049, year - 100, year),
+    month = as.integer(month),
+    month = as.character(month),
+    day = as.integer(day)) %>% 
+    select(-day) %>% 
+  relocate(year, month)
+data_snp
+```
 
+### Import and clean data of `unemployment.csv`. Prepare the data of `unemployment.csv` for merge by pivot_longer().
+```{r}
+data_unemployment =
+  read_csv("/Users/pap/Desktop/R_space/P8105_HW2_WZ2631/unemployment.csv") %>% 
+  janitor::clean_names() %>%
+  mutate(year = as.integer(year)) %>%
+  pivot_longer(
+    jan:dec, 
+    names_to = "month", 
+    values_to = "unemployment_rate")
+data_unemployment 
+```
+### Merge three datasets.
+```{r}
+snp_pols = left_join(data_pols, data_snp, by = c("year","month")) 
+snp_pols_unemployment = left_join(snp_pols, data_unemployment, by = c("year","month")) 
+snp_pols_unemployment
+```
+
+### Explain what each dataset contained, and describe the resulting dataset.
+1. The dataset of data_pols has 822 rows and 9 columns.The key variables included are year, month, statistics of the political groups of policians, also the political group to which the president belonged. It ranges from Jan 1947 to Jun 2015.
+2. The dataset of data_snp has 787 rows and 3 columns. The key variables included are year, month, and the corresponding closing values of stock index. It ranges from Jan 1950 to Jul 2015.
+3. The dataset of data_unemployment has 816 rows and 3 columns. The key variables included are year, month, and unemployment_rate. It ranges from Jan 1948 to Dec 2015.
+4. The dataset of snp_pols_unemployment merged the three datasets together, with 822 rows and 11 columns. Its key variables includes year, month, statistics of the political groups of policians, the political group to which the president belonged, the corresponding closing values of stock index, and unemployment_rate. It ranges from Jan 1947 to Jun 2015, displaying the characteristics of the above three datasets are comprehensively, indicating the potential correlation between economy, politics and people's livelihood.
