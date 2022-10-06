@@ -1,0 +1,133 @@
+---
+title: "P8105_HW2_WZ2631"
+author: "wz2631"
+date: "2022-10-06"
+output: html_document
+---
+
+
+```{r load_libraries}
+library(tidyverse)
+library(readxl)
+```
+
+
+### Problem 1
+
+### Import and clean data firstly.
+```{r}
+trans_ent = 
+  read_csv(
+    "/Users/pap/Desktop/R_space/P8105_HW2_WZ2631/NYC_Transit_Subway_Entrance_And_Exit_Data.csv",
+    col_types = cols(Route8 = "c", Route9 = "c", Route10 = "c", Route11 = "c")) %>% 
+  janitor::clean_names() %>% 
+  select(
+    line, station_name, station_latitude, station_longitude, 
+    starts_with("route"), entry, exit_only, vending, entrance_type, 
+    ada) %>% 
+  mutate(entry = ifelse(entry == "YES", TRUE, FALSE))
+```
+
+### The number of unique stations is 465.
+```{r}
+trans_ent %>% 
+  select(station_name, line) %>% 
+  distinct
+```
+
+### The number of ADA compliant stations is 84.
+```{r}
+trans_ent %>% 
+  filter(ada == TRUE) %>% 
+  select(station_name, line) %>% 
+  distinct
+```
+
+### The proportion of station entrances / exits without vending allow entrance is 0.3770492.
+```{r}
+trans_ent %>% 
+  filter(vending == "NO") %>% 
+  pull(entry) %>% 
+  mean
+```
+
+### The numeber of stations that serve the A train is 60, of which 17 stations are ADA compliant.
+```{r}
+trans_ent %>% 
+  pivot_longer(
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route") %>% 
+  filter(route == "A") %>% 
+  select(station_name, line) %>% 
+  distinct
+
+trans_ent %>% 
+  pivot_longer(
+    route1:route11,
+    names_to = "route_num",
+    values_to = "route") %>% 
+  filter(route == "A", ada == TRUE) %>% 
+  select(station_name, line) %>% 
+  distinct
+```
+
+## Problem 2
+
+### Import and clean data of Mr. Trash Wheel.
+```{r}
+df_mr = 
+ read_excel(
+   "/Users/pap/Desktop/R_space/P8105_HW2_WZ2631/Trash Wheel Collection Data.xlsx", 
+   sheet = 1, 
+   range = "A2:N549") %>%
+  janitor::clean_names() %>%
+  drop_na(dumpster) %>%
+  mutate(sports_balls = as.integer(sports_balls), 
+         data_source = "mr_trash_wheel",
+         year = as.integer(year)) 
+```
+
+### Import and clean data of Professor. Trash Wheel.
+```{r}
+df_prof = 
+ read_excel(
+   "/Users/pap/Desktop/R_space/P8105_HW2_WZ2631/Trash Wheel Collection Data.xlsx", 
+   sheet = 2, 
+   range = "A2:M96") %>%
+  janitor::clean_names() %>%
+  drop_na(dumpster) %>%
+  mutate(data_source = "prof_trash_wheel") 
+```
+
+### Combine the data of Mr. Trash Wheel and Professor. Trash Wheel.
+```{r}
+df_trash =
+  bind_rows(df_mr, df_prof) %>%
+  janitor::clean_names() 
+df_trash
+```
+
+### Description and answer.
+The time range of this observation is from May 2014 to July 2022. There are 15 variables and 641 observations, corresponding to the 15 columns and 641 rows of the "df_trash" dataframe respectively.
+The key variables include date, weight_tons and volume_cubic_yards, and different types of trash are described as well. The additional variable "data_source" was added to keep track of which one of the two Trash Wheels that collected the trash.
+```{r}
+weight_prof =
+  df_trash %>%
+  filter(data_source == "prof_trash_wheel") 
+  
+sum(weight_prof$weight_tons)
+```
+Therefore, the total weight of trash collected by Professor Trash Wheel was 190.12 tons.
+```{r}
+sportsballs2020_mr =
+  df_trash %>%
+  filter(data_source == "mr_trash_wheel", year == 2020)
+  
+sum(sportsballs2020_mr$sports_balls)
+```
+As a result, the total number of sports balls collected by Mr. Trash Wheel in 2020 was 856.
+
+## Problem 3
+
+
